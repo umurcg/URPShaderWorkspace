@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f62c9c65cf3354c93be831c8bc075510, type: 3}
   m_Name: SSAO
   m_EditorClassIdentifier: 
-  m_Active: 1
+  m_Active: 0
   m_Settings:
     AOMethod: 1
     Downsample: 0
@@ -126,6 +126,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Active: 1
   settings:
-    renderPassEvent: 500
-    outlineMaterial: {fileID: -876546973899608171, guid: 1d3b931ac7a1f4336b0b3fa55498d369,
-      type: 3}
+    renderPassEvent: 300
+    outlineMaterial: {fileID: 2100000, guid: 1ec9b1bf4d48a45829b6084239c70066, type: 2}

@@ -15,15 +15,12 @@ public class OutlineFeature : ScriptableRendererFeature
 
     class OutlinePass : ScriptableRenderPass
     {
-        private RTHandle tempTexture;
+        public RTHandle tempTexture;
         public Material outlineMaterial;
-        private OutlineSettings settings;
-        private string profilerTag;
 
-        public OutlinePass(OutlineSettings settings, string profilerTag)
+        public OutlinePass(string profilerTag)
         {
-            this.settings = settings;
-            this.profilerTag = profilerTag;
+            profilingSampler = new ProfilingSampler(profilerTag);
             ConfigureInput(ScriptableRenderPassInput.Color);
         }
 
@@ -31,7 +28,13 @@ public class OutlineFeature : ScriptableRendererFeature
         {
             var descriptor = renderingData.cameraData.cameraTargetDescriptor;
             descriptor.depthBufferBits = 0;
-            RenderingUtils.ReAllocateIfNeeded(ref tempTexture, descriptor, FilterMode.Bilinear, TextureWrapMode.Clamp, name: "_TempOutlineTexture");
+            if (tempTexture == null || tempTexture.rt == null || 
+                tempTexture.rt.width != descriptor.width || 
+                tempTexture.rt.height != descriptor.height)
+            {
+                RenderingUtils.ReAllocateIfNeeded(ref tempTexture, descriptor, FilterMode.Bilinear, TextureWrapMode.Clamp, name: "_TempOutlineTexture");
+                // Debug.Log($"Allocated tempTexture: {tempTexture.name}, Size: {descriptor.width}x{descriptor.height}");
+            }
         }
 
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
@@ -42,37 +45,41 @@ public class OutlineFeature : ScriptableRendererFeature
                 return;
             }
 
-            CommandBuffer cmd = CommandBufferPool.Get(profilerTag);
+            CommandBuffer cmd = CommandBufferPool.Get();
 
             var cameraColorTarget = renderingData.cameraData.renderer.cameraColorTargetHandle;
-
-            try
+            if (cameraColorTarget.rt == null)
             {
-                // Draw the outline effect
-                Blitter.BlitCameraTexture(cmd, cameraColorTarget, tempTexture, outlineMaterial, 0);
-                Blitter.BlitCameraTexture(cmd, tempTexture, cameraColorTarget);
+                return;
             }
-            catch (System.Exception e)
-            {
-                Debug.LogError($"Error during outline effect: {e.Message}\n{e.StackTrace}");
-            }
+            
 
+            // // Apply outline effect
+            // cmd.SetGlobalTexture("_BlitTexture", cameraColorTarget);
+            // Blitter.BlitCameraTexture(cmd, cameraColorTarget, tempTexture, outlineMaterial, 0);
+            // Blitter.BlitCameraTexture(cmd, tempTexture, cameraColorTarget);
+
+            
+            cmd.SetGlobalTexture("_MainText", cameraColorTarget);
+            cmd.Blit(cameraColorTarget, cameraColorTarget, outlineMaterial);
+            // cmd.Blit(tempTexture, cameraColorTarget);
             context.ExecuteCommandBuffer(cmd);
+            
+            Debug.Log("OutlinePass executed");
+            
+            
             CommandBufferPool.Release(cmd);
         }
 
-        public override void OnCameraCleanup(CommandBuffer cmd)
-        {
-            // No need to release tempTexture here as it's handled by RTHandles system
-        }
+
     }
 
-    OutlinePass outlinePass;
+    private OutlinePass outlinePass;
     private const string k_ProfilerTag = "Outline Pass";
 
     public override void Create()
     {
-        outlinePass = new OutlinePass(settings, k_ProfilerTag)
+        outlinePass = new OutlinePass(k_ProfilerTag)
         {
             renderPassEvent = settings.renderPassEvent,
             outlineMaterial = settings.outlineMaterial
@@ -86,12 +93,12 @@ public class OutlineFeature : ScriptableRendererFeature
             Debug.LogWarning($"Missing Outline Material. {GetType().Name} render pass will not execute. Check for missing reference in the assigned renderer.");
             return;
         }
-
+        
         renderer.EnqueuePass(outlinePass);
     }
 
     protected override void Dispose(bool disposing)
     {
-        // tempTexture is automatically disposed by the RTHandle system
+        outlinePass?.tempTexture?.Release();
     }
 }
