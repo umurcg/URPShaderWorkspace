@@ -54,12 +54,11 @@ public class OutlineFeature : ScriptableRendererFeature
                 return;
             }
             
-            outlineMaterial.SetTexture("_MainText", cameraColorTarget);
+            outlineMaterial.SetTexture("_MainTex", cameraColorTarget);
             
             cmd.Blit(cameraColorTarget, tempTexture, outlineMaterial);
             cmd.Blit(tempTexture, cameraColorTarget);
             context.ExecuteCommandBuffer(cmd);
-            
             CommandBufferPool.Release(cmd);
         }
 
