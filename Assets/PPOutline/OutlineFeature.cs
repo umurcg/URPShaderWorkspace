@@ -32,7 +32,7 @@ public class OutlineFeature : ScriptableRendererFeature
                 tempTexture.rt.width != descriptor.width || 
                 tempTexture.rt.height != descriptor.height)
             {
-                RenderingUtils.ReAllocateIfNeeded(ref tempTexture, descriptor, FilterMode.Bilinear, TextureWrapMode.Clamp, name: "_TempOutlineTexture");
+                RenderingUtils.ReAllocateHandleIfNeeded(ref tempTexture, descriptor, FilterMode.Bilinear, TextureWrapMode.Clamp, name: "_TempOutlineTexture");
                 // Debug.Log($"Allocated tempTexture: {tempTexture.name}, Size: {descriptor.width}x{descriptor.height}");
             }
         }
@@ -50,23 +50,15 @@ public class OutlineFeature : ScriptableRendererFeature
             var cameraColorTarget = renderingData.cameraData.renderer.cameraColorTargetHandle;
             if (cameraColorTarget.rt == null)
             {
+                // Debug.LogError("Camera color target is null. Skipping outline pass.");
                 return;
             }
             
-
-            // // Apply outline effect
-            // cmd.SetGlobalTexture("_BlitTexture", cameraColorTarget);
-            // Blitter.BlitCameraTexture(cmd, cameraColorTarget, tempTexture, outlineMaterial, 0);
-            // Blitter.BlitCameraTexture(cmd, tempTexture, cameraColorTarget);
-
+            outlineMaterial.SetTexture("_MainText", cameraColorTarget);
             
-            cmd.SetGlobalTexture("_MainText", cameraColorTarget);
-            cmd.Blit(cameraColorTarget, cameraColorTarget, outlineMaterial);
-            // cmd.Blit(tempTexture, cameraColorTarget);
+            cmd.Blit(cameraColorTarget, tempTexture, outlineMaterial);
+            cmd.Blit(tempTexture, cameraColorTarget);
             context.ExecuteCommandBuffer(cmd);
-            
-            Debug.Log("OutlinePass executed");
-            
             
             CommandBufferPool.Release(cmd);
         }
