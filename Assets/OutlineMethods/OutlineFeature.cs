@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
 public class OutlineFeature : ScriptableRendererFeature
@@ -9,82 +8,29 @@ public class OutlineFeature : ScriptableRendererFeature
     {
         public RenderPassEvent renderPassEvent = RenderPassEvent.AfterRenderingTransparents;
         public Material outlineMaterial = null;
+        public bool useObjectIDMask;
+        public Material objectIDMaterial;
     }
 
     public OutlineSettings settings = new OutlineSettings();
 
-    class OutlinePass : ScriptableRenderPass
-    {
-        public RTHandle tempTexture;
-        public Material outlineMaterial;
-
-        public OutlinePass(string profilerTag)
-        {
-            profilingSampler = new ProfilingSampler(profilerTag);
-            ConfigureInput(ScriptableRenderPassInput.Color);
-        }
-
-        public override void OnCameraSetup(CommandBuffer cmd, ref RenderingData renderingData)
-        {
-            var descriptor = renderingData.cameraData.cameraTargetDescriptor;
-            descriptor.depthBufferBits = 0;
-            if (tempTexture == null || tempTexture.rt == null || 
-                tempTexture.rt.width != descriptor.width || 
-                tempTexture.rt.height != descriptor.height)
-            {
-                RenderingUtils.ReAllocateHandleIfNeeded(ref tempTexture, descriptor, FilterMode.Bilinear, TextureWrapMode.Clamp, name: "_TempOutlineTexture");
-                // Debug.Log($"Allocated tempTexture: {tempTexture.name}, Size: {descriptor.width}x{descriptor.height}");
-            }
-        }
-
-        public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
-        {
-            if (outlineMaterial == null)
-            {
-                Debug.LogError("Outline material is null. Please assign a material in the OutlineFeature settings.");
-                return;
-            }
-
-            CommandBuffer cmd = CommandBufferPool.Get();
-
-            var cameraColorTarget = renderingData.cameraData.renderer.cameraColorTargetHandle;
-            if (cameraColorTarget.rt == null)
-            {
-                // Debug.LogError("Camera color target is null. Skipping outline pass.");
-                return;
-            }
-            
-            outlineMaterial.SetTexture("_MainTex", cameraColorTarget);
-            
-            cmd.Blit(cameraColorTarget, tempTexture, outlineMaterial);
-            cmd.Blit(tempTexture, cameraColorTarget);
-            context.ExecuteCommandBuffer(cmd);
-            CommandBufferPool.Release(cmd);
-        }
-
-
-    }
-
+ 
+    protected ObjectIDRenderPass objectIDPass;
     private OutlinePass outlinePass;
-    private const string k_ProfilerTag = "Outline Pass";
 
     public override void Create()
     {
-        outlinePass = new OutlinePass(k_ProfilerTag)
+        objectIDPass = new ObjectIDRenderPass(settings.objectIDMaterial);
+        outlinePass = new OutlinePass()
         {
-            renderPassEvent = settings.renderPassEvent,
-            outlineMaterial = settings.outlineMaterial
+            settings = settings,
+            objectIDPass = objectIDPass,
         };
     }
 
     public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
     {
-        if (outlinePass.outlineMaterial == null)
-        {
-            Debug.LogWarning($"Missing Outline Material. {GetType().Name} render pass will not execute. Check for missing reference in the assigned renderer.");
-            return;
-        }
-        
+        renderer.EnqueuePass(objectIDPass);
         renderer.EnqueuePass(outlinePass);
     }
 
