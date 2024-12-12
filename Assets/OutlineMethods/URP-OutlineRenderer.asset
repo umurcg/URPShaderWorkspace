@@ -46,8 +46,9 @@ MonoBehaviour:
   settings:
     renderPassEvent: 500
     outlineMaterial: {fileID: 2100000, guid: c648eaa8f6d82479e91cf179dba4fcaa, type: 2}
-    useObjectIDMask: 1
-    objectIDMaterial: {fileID: 2100000, guid: 139f8cff804f243acb5e641fe871e621, type: 2}
+    layerMask:
+      serializedVersion: 2
+      m_Bits: 512
 --- !u!114 &-3617011155627145735
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -64,8 +65,9 @@ MonoBehaviour:
   settings:
     renderPassEvent: 500
     outlineMaterial: {fileID: 2100000, guid: d43c094725d3f4eca85394df8f2f5e97, type: 2}
-    useObjectIDMask: 1
-    objectIDMaterial: {fileID: 2100000, guid: 139f8cff804f243acb5e641fe871e621, type: 2}
+    layerMask:
+      serializedVersion: 2
+      m_Bits: 0
 --- !u!114 &-1878332245247344467
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -181,5 +183,6 @@ MonoBehaviour:
   settings:
     renderPassEvent: 300
     outlineMaterial: {fileID: 2100000, guid: 1ec9b1bf4d48a45829b6084239c70066, type: 2}
-    useObjectIDMask: 1
-    objectIDMaterial: {fileID: 2100000, guid: 139f8cff804f243acb5e641fe871e621, type: 2}
+    layerMask:
+      serializedVersion: 2
+      m_Bits: 0
